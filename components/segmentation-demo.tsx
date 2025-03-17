@@ -200,6 +200,7 @@ export default function SegmentationDemo() {
                 key={object.id}
                 object={object}
                 onRemove={() => removeObject(object.id)}
+                showDeleteButton={true}
               />
             ))}
 
