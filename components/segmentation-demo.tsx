@@ -27,6 +27,7 @@ export default function SegmentationDemo() {
     }[]
   >([]);
   const [currentTime, setCurrentTime] = useState("0:00");
+  const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -42,7 +43,9 @@ export default function SegmentationDemo() {
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(formatTime(videoRef.current.currentTime));
+      const seconds = videoRef.current.currentTime;
+      setCurrentTime(formatTime(seconds));
+      setCurrentTimeSeconds(seconds);
     }
   };
 
@@ -134,6 +137,27 @@ export default function SegmentationDemo() {
     setObjects([]);
     setCurrentStep(1);
   };
+
+  // Add an effect to request animation frames for smoother updates during playback
+  useEffect(() => {
+    if (!isPlaying || !videoRef.current) return;
+
+    let animationFrameId: number;
+
+    const updateTime = () => {
+      if (videoRef.current) {
+        const seconds = videoRef.current.currentTime;
+        setCurrentTimeSeconds(seconds);
+      }
+      animationFrameId = requestAnimationFrame(updateTime);
+    };
+
+    animationFrameId = requestAnimationFrame(updateTime);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isPlaying]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-950 text-white">
@@ -300,7 +324,7 @@ export default function SegmentationDemo() {
               <div className="flex items-center gap-4">
                 <VideoTimeline
                   objects={objects}
-                  currentTime={videoRef.current?.currentTime || 0}
+                  currentTime={currentTimeSeconds}
                   duration={duration}
                   onSeek={handleSeek}
                   videoURL={videoUrl}

@@ -24,6 +24,7 @@ export default function VideoTimeline({
   const [frameImages, setFrameImages] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [localPlayheadPosition, setLocalPlayheadPosition] = useState<
     number | null
@@ -95,13 +96,15 @@ export default function VideoTimeline({
     if (!timelineRef.current || !duration) return;
 
     const rect = timelineRef.current.getBoundingClientRect();
-    const offsetX = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
+
+    // Calculate position, clamped to the timeline width
+    const offsetX = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const percentage = offsetX / rect.width;
 
     // Update local position immediately for smooth UI
     setLocalPlayheadPosition(percentage * 100);
 
-    // Debounce the actual seek to avoid overwhelming the video element
+    // Update the video position
     const newTime = percentage * duration;
     onSeek([newTime]);
   };
@@ -126,6 +129,7 @@ export default function VideoTimeline({
     // Add global mouse event listeners for dragging
     if (isDragging) {
       const onGlobalMouseMove = (e: MouseEvent) => {
+        // Continue tracking horizontal movement even if cursor is outside timeline vertically
         handleTimelineInteraction(e.clientX);
       };
 
@@ -134,6 +138,7 @@ export default function VideoTimeline({
         setLocalPlayheadPosition(null); // Clear local position to use currentTime again
       };
 
+      // Add listeners to window to track cursor outside of component
       window.addEventListener("mousemove", onGlobalMouseMove, {
         passive: true,
       });
@@ -144,7 +149,7 @@ export default function VideoTimeline({
         window.removeEventListener("mouseup", onGlobalMouseUp);
       };
     }
-  }, [isDragging]);
+  }, [isDragging, duration]);
 
   // Calculate playhead position as percentage - use local position while dragging for smoother UI
   const playheadPosition =
@@ -155,7 +160,7 @@ export default function VideoTimeline({
       : 0;
 
   return (
-    <div className="flex-1">
+    <div className="flex-1" ref={containerRef}>
       <div className="relative mt-4">
         {/* Timeline scrubber with video frames */}
         {duration > 0 && (
@@ -165,12 +170,6 @@ export default function VideoTimeline({
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            onMouseLeave={() => {
-              if (isDragging) {
-                setIsDragging(false);
-                setLocalPlayheadPosition(null);
-              }
-            }}
           >
             {/* Frame display */}
             <div className="h-full flex">
@@ -208,7 +207,7 @@ export default function VideoTimeline({
 
             {/* Playhead indicator */}
             <div
-              className="absolute top-0 w-0.5 bg-white h-full pointer-events-none border border-black"
+              className="absolute top-0 w-0.5 bg-white h-full pointer-events-none border border-black "
               style={{
                 left: `${playheadPosition}%`,
                 transition: isDragging ? "none" : "left 0.1s linear",
@@ -217,7 +216,7 @@ export default function VideoTimeline({
 
             {/* Draggable handle */}
             <div
-              className="absolute top-0 w-4 h-6 bg-white rounded-sm -ml-2 cursor-col-resize z-10 hover:shadow-lg border border-black"
+              className="absolute top-0 w-4 h-6 bg-white rounded-sm -ml-2 cursor-col-resize z-10 hover:shadow-lg border border-black    "
               style={{
                 left: `${playheadPosition}%`,
                 transition: isDragging ? "none" : "left 0.1s linear",
@@ -233,7 +232,7 @@ export default function VideoTimeline({
             {/* Time tooltip */}
             {isDragging && (
               <div
-                className="absolute top-[-25px] bg-black/80 text-white text-xs px-2 py-1 rounded transform -translate-x-1/2 pointer-events-none"
+                className="absolute top-[-25px] bg-black/80 text-white text-xs px-2 py-1 rounded transform -translate-x-1/2 pointer-events-none border border-black"
                 style={{ left: `${playheadPosition}%` }}
               >
                 {formatTime(duration * (playheadPosition / 100))}
