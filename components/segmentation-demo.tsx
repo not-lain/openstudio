@@ -185,9 +185,6 @@ export default function SegmentationDemo() {
         {/* Sidebar */}
         <div className="w-96 bg-gray-900 border-r border-gray-800 overflow-y-auto">
           <div className="p-4 border-b border-gray-800">
-            <div className="inline-block bg-gray-800 rounded-full px-3 py-1 text-sm mb-4">
-              {currentStep}/3 Select objects
-            </div>
             <p className="text-gray-400 text-sm">
               Adjust the selection of your object, or add additional objects.
               Press "Track objects" to track your objects throughout the video.
