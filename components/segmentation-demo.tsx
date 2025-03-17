@@ -1,0 +1,246 @@
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import Image from "next/image";
+import { Play, Plus, RotateCcw, ExternalLink, Upload, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import ObjectSelection from "./object-selection";
+import VideoTimeline from "./video-timeline";
+
+export default function SegmentationDemo() {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [objects, setObjects] = useState([
+    {
+      id: 1,
+      name: "Object 1",
+      thumbnail: "/placeholder.svg?height=60&width=60",
+    },
+  ]);
+  const [currentTime, setCurrentTime] = useState("0:00");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRemoveVideo = useCallback(() => {
+    if (videoUrl) {
+      URL.revokeObjectURL(videoUrl);
+    }
+    setVideoFile(null);
+    setVideoUrl(null);
+  }, [videoUrl]);
+
+  const handleFileSelect = useCallback((file: File) => {
+    if (file && file.type.startsWith("video/")) {
+      setVideoFile(file);
+      const url = URL.createObjectURL(file);
+      setVideoUrl(url);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+    },
+    [handleFileSelect]
+  );
+
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+    },
+    [handleFileSelect]
+  );
+
+  const addObject = () => {
+    const newId = objects.length + 1;
+    setObjects([
+      ...objects,
+      {
+        id: newId,
+        name: `Object ${newId}`,
+        thumbnail: "/placeholder.svg?height=60&width=60",
+      },
+    ]);
+  };
+
+  const removeObject = (id: number) => {
+    if (objects.length > 1) {
+      setObjects(objects.filter((obj) => obj.id !== id));
+    }
+  };
+
+  const startOver = () => {
+    setObjects([
+      {
+        id: 1,
+        name: "Object 1",
+        thumbnail: "/placeholder.svg?height=60&width=60",
+      },
+    ]);
+    setCurrentStep(1);
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-950 text-white">
+      {/* Header */}
+      <header className="flex justify-between items-center p-4 border-b border-gray-800">
+        <div>
+          <h1 className="text-xl font-bold">Segment Anything 2 Demo</h1>
+          <p className="text-sm text-gray-400">OpenStudio</p>
+        </div>
+        <div className="flex gap-6">
+          <a href="#" className="flex items-center gap-1 text-sm">
+            About <ExternalLink className="w-4 h-4" />
+          </a>
+          <a href="#" className="flex items-center gap-1 text-sm">
+            Dataset <ExternalLink className="w-4 h-4" />
+          </a>
+          <a href="#" className="flex items-center gap-1 text-sm">
+            AI Demos <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-96 bg-gray-900 border-r border-gray-800 overflow-y-auto">
+          <div className="p-4 border-b border-gray-800">
+            <div className="inline-block bg-gray-800 rounded-full px-3 py-1 text-sm mb-4">
+              {currentStep}/3 Select objects
+            </div>
+            <p className="text-gray-400 text-sm">
+              Adjust the selection of your object, or add additional objects.
+              Press "Track objects" to track your objects throughout the video.
+            </p>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {objects.map((object) => (
+              <ObjectSelection
+                key={object.id}
+                object={object}
+                onRemove={() => removeObject(object.id)}
+              />
+            ))}
+
+            <button
+              onClick={addObject}
+              className="w-full h-16 border border-gray-700 rounded-md flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors text-white"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add another object</span>
+            </button>
+          </div>
+
+          <div className="absolute bottom-0 w-96 p-4 border-t border-gray-800 bg-gray-900 flex justify-between items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={startOver}
+              className="flex items-center gap-2 bg-white text-black hover:bg-gray-100 border-0 [&_svg]:text-black"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Start over
+            </Button>
+            <Button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+              Track objects
+            </Button>
+          </div>
+        </div>
+
+        {/* Main Video Area */}
+        <div className="flex-1 flex flex-col relative">
+          <div
+            className="flex-1 relative"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            {videoUrl ? (
+              <>
+                <video
+                  src={videoUrl}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  controls
+                />
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleRemoveVideo}
+                    className="rounded-full bg-black/50 border-0 hover:bg-black/70 text-white [&_svg]:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                    <span className="sr-only">Remove video</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full bg-black/50 border-0 text-white"
+                  >
+                    <span className="sr-only">Info</span>
+                    <span className="text-lg">ⓘ</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <div className="text-center">
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-400 mb-2">
+                    Drag and drop a video file here
+                  </p>
+                  <p className="text-gray-500 text-sm">or</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2 bg-white text-black hover:bg-gray-100 [&_svg]:text-black"
+                  >
+                    Select a video file
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileInput}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Video Controls */}
+          <div className="p-4 border-t border-gray-800 bg-gray-900">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full bg-white text-black hover:bg-gray-100 border-0 [&_svg]:text-black"
+              >
+                <Play className="w-4 h-4" />
+                <span className="sr-only">Play</span>
+              </Button>
+              <span className="text-sm">{currentTime}</span>
+              <VideoTimeline objects={objects} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
