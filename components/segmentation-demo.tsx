@@ -1,11 +1,20 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Play, Plus, RotateCcw, ExternalLink, Upload, X } from "lucide-react";
+import {
+  Play,
+  Plus,
+  RotateCcw,
+  ExternalLink,
+  Upload,
+  X,
+  Pause,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ObjectSelection from "./object-selection";
 import VideoTimeline from "./video-timeline";
+import { Slider } from "@/components/ui/slider";
 
 export default function SegmentationDemo() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,9 +26,47 @@ export default function SegmentationDemo() {
     },
   ]);
   const [currentTime, setCurrentTime] = useState("0:00");
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(formatTime(videoRef.current.currentTime));
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleSeek = (value: number[]) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = value[0];
+    }
+  };
 
   const handleRemoveVideo = useCallback(() => {
     if (videoUrl) {
@@ -173,9 +220,11 @@ export default function SegmentationDemo() {
             {videoUrl ? (
               <>
                 <video
+                  ref={videoRef}
                   src={videoUrl}
                   className="absolute inset-0 w-full h-full object-contain"
-                  controls
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
                 />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <Button
@@ -226,17 +275,35 @@ export default function SegmentationDemo() {
 
           {/* Video Controls */}
           <div className="p-4 border-t border-gray-800 bg-gray-900">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full bg-white text-black hover:bg-gray-100 border-0 [&_svg]:text-black"
-              >
-                <Play className="w-4 h-4" />
-                <span className="sr-only">Play</span>
-              </Button>
-              <span className="text-sm">{currentTime}</span>
-              <VideoTimeline objects={objects} />
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={togglePlayPause}
+                  className="rounded-full bg-white text-black hover:bg-gray-100 border-0 [&_svg]:text-black"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4" />
+                  ) : (
+                    <Play className="w-4 h-4" />
+                  )}
+                  <span className="sr-only">
+                    {isPlaying ? "Pause" : "Play"}
+                  </span>
+                </Button>
+                <span className="text-sm">{currentTime}</span>
+                <span className="text-sm text-gray-400">/</span>
+                <span className="text-sm">{formatTime(duration)}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <VideoTimeline
+                  objects={objects}
+                  currentTime={videoRef.current?.currentTime || 0}
+                  duration={duration}
+                  onSeek={handleSeek}
+                />
+              </div>
             </div>
           </div>
         </div>
