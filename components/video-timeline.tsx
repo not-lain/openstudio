@@ -9,6 +9,7 @@ interface VideoTimelineProps {
   currentTime: number;
   duration: number;
   onSeek: (value: number[]) => void;
+  videoURL: string | null;
 }
 
 export default function VideoTimeline({
@@ -16,10 +17,11 @@ export default function VideoTimeline({
   currentTime,
   duration,
   onSeek,
+  videoURL,
 }: VideoTimelineProps) {
   // Generate 15 frames for the timeline
   const frames = Array.from({ length: 15 }, (_, i) => i);
-
+  console.log("Video URL:", videoURL);
   return (
     <div className="flex-1">
       <div className="relative">

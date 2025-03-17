@@ -302,6 +302,7 @@ export default function SegmentationDemo() {
                   currentTime={videoRef.current?.currentTime || 0}
                   duration={duration}
                   onSeek={handleSeek}
+                  videoURL={videoUrl}
                 />
               </div>
             </div>
