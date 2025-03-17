@@ -18,13 +18,14 @@ import { Slider } from "@/components/ui/slider";
 
 export default function SegmentationDemo() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [objects, setObjects] = useState([
+  const [nextObjectId, setNextObjectId] = useState(1);
+  const [objects, setObjects] = useState<
     {
-      id: 1,
-      name: "Object 1",
-      thumbnail: "/placeholder.svg?height=60&width=60",
-    },
-  ]);
+      id: number;
+      name: string;
+      thumbnail: string;
+    }[]
+  >([]);
   const [currentTime, setCurrentTime] = useState("0:00");
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -113,7 +114,7 @@ export default function SegmentationDemo() {
   );
 
   const addObject = () => {
-    const newId = objects.length + 1;
+    const newId = nextObjectId;
     setObjects([
       ...objects,
       {
@@ -122,22 +123,15 @@ export default function SegmentationDemo() {
         thumbnail: "/placeholder.svg?height=60&width=60",
       },
     ]);
+    setNextObjectId(newId + 1);
   };
 
   const removeObject = (id: number) => {
-    if (objects.length > 1) {
-      setObjects(objects.filter((obj) => obj.id !== id));
-    }
+    setObjects(objects.filter((obj) => obj.id !== id));
   };
 
   const startOver = () => {
-    setObjects([
-      {
-        id: 1,
-        name: "Object 1",
-        thumbnail: "/placeholder.svg?height=60&width=60",
-      },
-    ]);
+    setObjects([]);
     setCurrentStep(1);
   };
 
@@ -176,7 +170,7 @@ export default function SegmentationDemo() {
             </p>
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="pt-4 px-4 space-y-4 pb-20">
             {objects.map((object) => (
               <ObjectSelection
                 key={object.id}
@@ -184,6 +178,13 @@ export default function SegmentationDemo() {
                 onRemove={() => removeObject(object.id)}
               />
             ))}
+
+            {objects.length === 0 && (
+              <div className="text-center p-4 text-gray-400">
+                No objects selected. Click the "Add another object" button below
+                to get started.
+              </div>
+            )}
 
             <button
               onClick={addObject}

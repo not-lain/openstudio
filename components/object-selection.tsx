@@ -1,17 +1,20 @@
-import Image from "next/image"
-import { Plus, Minus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Image from "next/image";
+import { Plus, Minus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ObjectSelectionProps {
   object: {
-    id: number
-    name: string
-    thumbnail: string
-  }
-  onRemove: () => void
+    id: number;
+    name: string;
+    thumbnail: string;
+  };
+  onRemove: () => void;
 }
 
-export default function ObjectSelection({ object, onRemove }: ObjectSelectionProps) {
+export default function ObjectSelection({
+  object,
+  onRemove,
+}: ObjectSelectionProps) {
   return (
     <div className="bg-gray-950 rounded-md p-4">
       <div className="flex items-center gap-3 mb-3">
@@ -27,23 +30,29 @@ export default function ObjectSelection({ object, onRemove }: ObjectSelectionPro
 
       <div className="text-sm text-gray-400 mb-4">
         <p>
-          Select <span className="text-blue-400">⊕</span> to add areas to the object and
-          <span className="text-red-400"> ⊖</span> to remove areas from the object in the video. Click on an existing
-          point to delete it.
+          Select <span className="text-blue-400">⊕</span> to add areas to the
+          object and
+          <span className="text-red-400"> ⊖</span> to remove areas from the
+          object in the video. Click on an existing point to delete it.
         </p>
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 bg-gray-800 hover:bg-gray-700 border-0">
+        <Button
+          variant="outline"
+          className="flex-1 bg-gray-800 hover:bg-gray-700 border-0"
+        >
           <Plus className="w-4 h-4 mr-2 text-blue-400" />
           Add
         </Button>
-        <Button variant="outline" className="flex-1 bg-gray-800 hover:bg-gray-700 border-0">
+        <Button
+          variant="outline"
+          className="flex-1 bg-gray-800 hover:bg-gray-700 border-0"
+        >
           <Minus className="w-4 h-4 mr-2 text-red-400" />
           Remove
         </Button>
       </div>
     </div>
-  )
+  );
 }
-
