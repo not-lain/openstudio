@@ -35,6 +35,24 @@ export default function SegmentationDemo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Bounding Box State
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const [endPoint, setEndPoint] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const [boundingBoxes, setBoundingBoxes] = useState<
+    {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      frameNumber: number;
+    }[]
+  >([]);
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
@@ -78,6 +96,7 @@ export default function SegmentationDemo() {
     }
     setVideoFile(null);
     setVideoUrl(null);
+    setBoundingBoxes([]); // Clear bounding boxes when video is removed
   }, [videoUrl]);
 
   const handleFileSelect = useCallback((file: File) => {
@@ -85,6 +104,7 @@ export default function SegmentationDemo() {
       setVideoFile(file);
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
+      setBoundingBoxes([]); // Clear bounding boxes when new video is loaded
     }
   }, []);
 
@@ -136,9 +156,9 @@ export default function SegmentationDemo() {
   const startOver = () => {
     setObjects([]);
     setCurrentStep(1);
+    setBoundingBoxes([]); // Clear bounding boxes when starting over
   };
 
-  // Add an effect to request animation frames for smoother updates during playback
   useEffect(() => {
     if (!isPlaying || !videoRef.current) return;
 
@@ -159,6 +179,63 @@ export default function SegmentationDemo() {
     };
   }, [isPlaying]);
 
+  // Bounding box handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLVideoElement>) => {
+    setIsDrawing(true);
+    if (videoRef.current) {
+      const rect = videoRef.current.getBoundingClientRect();
+      setStartPoint({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+      setEndPoint({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (isDrawing && videoRef.current) {
+      const rect = videoRef.current.getBoundingClientRect();
+      setEndPoint({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (startPoint && endPoint && videoRef.current) {
+      const x = Math.min(startPoint.x, endPoint.x);
+      const y = Math.min(startPoint.y, endPoint.y);
+      const width = Math.abs(endPoint.x - startPoint.x);
+      const height = Math.abs(endPoint.y - startPoint.y);
+      const fps = 30;
+      const frameNumber = Math.floor(videoRef.current.currentTime * fps);
+
+      if (width > 10 && height > 10) {
+        console.log("Bounding Box:", { x, y, width, height, frameNumber });
+      }
+    }
+
+    setIsDrawing(false);
+    setStartPoint(null);
+    setEndPoint(null);
+  };
+
+  // Function to handle clicks on the video when not drawing a box
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (!isDrawing && videoRef.current) {
+      const video = videoRef.current;
+      const rect = video.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Calculate frame number (assuming 30 fps for demonstration)
+      const fps = 30;
+      const frameNumber = Math.floor(video.currentTime * fps);
+
+      console.log("Clicked at:", { x, y, frameNumber });
+    }
+  };
   return (
     <div className="flex flex-col h-screen bg-gray-950 text-white">
       {/* Header */}
@@ -248,7 +325,36 @@ export default function SegmentationDemo() {
                   className="absolute inset-0 w-full h-full object-contain"
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
+                  onClick={handleVideoClick} // Click event for non-drawing
+                  onMouseDown={handleMouseDown} // Start drawing
+                  onMouseMove={handleMouseMove} // Draw
+                  onMouseUp={handleMouseUp} // Finish drawing
                 />
+                {/* Render Bounding Boxes */}
+                {boundingBoxes.map((box, index) => (
+                  <div
+                    key={index}
+                    className="absolute border-2 border-blue-500 pointer-events-none"
+                    style={{
+                      left: `${box.x}px`,
+                      top: `${box.y}px`,
+                      width: `${box.width}px`,
+                      height: `${box.height}px`,
+                    }}
+                  />
+                ))}
+                {/* Temporary Bounding Box */}
+                {isDrawing && startPoint && endPoint && (
+                  <div
+                    className="absolute border-2 border-red-500 pointer-events-none"
+                    style={{
+                      left: `${Math.min(startPoint.x, endPoint.x)}px`,
+                      top: `${Math.min(startPoint.y, endPoint.y)}px`,
+                      width: `${Math.abs(endPoint.x - startPoint.x)}px`,
+                      height: `${Math.abs(endPoint.y - startPoint.y)}px`,
+                    }}
+                  />
+                )}
                 <div className="absolute top-4 right-4 flex gap-2">
                   <Button
                     variant="outline"
