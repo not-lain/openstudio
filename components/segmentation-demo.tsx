@@ -78,11 +78,29 @@ export default function SegmentationDemo() {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        if (videoRef.current.ended) {
+          videoRef.current.currentTime = 0;
+        }
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
     }
   };
+
+  // Add keyboard control
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && videoRef.current) {
+        e.preventDefault(); // Prevent page scroll
+        togglePlayPause();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isPlaying]); // Include isPlaying in dependencies
 
   const handleSeek = (value: number[]) => {
     if (videoRef.current) {
@@ -96,7 +114,11 @@ export default function SegmentationDemo() {
     }
     setVideoFile(null);
     setVideoUrl(null);
-    setBoundingBoxes([]); // Clear bounding boxes when video is removed
+    setBoundingBoxes([]); // Clear bounding boxes
+    setIsPlaying(false); // Reset playing state
+    setCurrentTime("0:00"); // Reset time display
+    setCurrentTimeSeconds(0); // Reset time in seconds
+    setDuration(0); // Reset duration
   }, [videoUrl]);
 
   const handleFileSelect = useCallback((file: File) => {
@@ -356,6 +378,7 @@ export default function SegmentationDemo() {
                   />
                 )}
                 <div className="absolute top-4 right-4 flex gap-2">
+                  {/* Remove Video */}
                   <Button
                     variant="outline"
                     size="icon"
@@ -432,6 +455,7 @@ export default function SegmentationDemo() {
                   duration={duration}
                   onSeek={handleSeek}
                   videoURL={videoUrl}
+                  setIsPlaying={setIsPlaying}
                 />
               </div>
             </div>
