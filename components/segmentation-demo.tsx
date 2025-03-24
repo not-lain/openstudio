@@ -24,6 +24,9 @@ export default function SegmentationDemo() {
       id: number;
       name: string;
       thumbnail: string;
+      points: Array<{x: number; y: number; frameNumber: number; isAddMode: boolean}>;
+      boundingBoxes: Array<{x: number; y: number; width: number; height: number; frameNumber: number; isAddMode: boolean}>;
+      isAddMode?: boolean; // Track add/remove mode for each object
     }[]
   >([]);
   const [currentTime, setCurrentTime] = useState("0:00");
@@ -50,8 +53,12 @@ export default function SegmentationDemo() {
       width: number;
       height: number;
       frameNumber: number;
+      isAddMode: boolean;
     }[]
   >([]);
+  
+  // Track which object is currently selected
+  const [selectedObjectIndex, setSelectedObjectIndex] = useState<number | null>(null);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -119,6 +126,8 @@ export default function SegmentationDemo() {
     setCurrentTime("0:00"); // Reset time display
     setCurrentTimeSeconds(0); // Reset time in seconds
     setDuration(0); // Reset duration
+    setObjects([]); // Reset objects to initial empty array
+    setNextObjectId(1); // Reset nextObjectId to initial value
   }, [videoUrl]);
 
   const handleFileSelect = useCallback((file: File) => {
@@ -160,15 +169,18 @@ export default function SegmentationDemo() {
 
   const addObject = () => {
     const newId = nextObjectId;
-    setObjects([
-      ...objects,
-      {
-        id: newId,
-        name: `Object ${newId}`,
-        thumbnail: "/placeholder.svg?height=60&width=60",
-      },
-    ]);
+    const newObject = {
+      id: newId,
+      name: `Object ${newId}`,
+      thumbnail: "/placeholder.svg?height=60&width=60",
+      points: [],
+      boundingBoxes: [],
+      isAddMode: true, // Default to add mode
+    };
+    setObjects([...objects, newObject]);
     setNextObjectId(newId + 1);
+    // Select the newly created object
+    setSelectedObjectIndex(objects.length);
   };
 
   const removeObject = (id: number) => {
@@ -179,6 +191,7 @@ export default function SegmentationDemo() {
     setObjects([]);
     setCurrentStep(1);
     setBoundingBoxes([]); // Clear bounding boxes when starting over
+    setNextObjectId(1); // Reset nextObjectId to initial value
   };
 
   useEffect(() => {
@@ -225,7 +238,7 @@ export default function SegmentationDemo() {
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLVideoElement>) => {
-    if (startPoint && endPoint && videoRef.current) {
+    if (startPoint && endPoint && videoRef.current && objects.length > 0) {
       const x = Math.min(startPoint.x, endPoint.x);
       const y = Math.min(startPoint.y, endPoint.y);
       const width = Math.abs(endPoint.x - startPoint.x);
@@ -234,10 +247,29 @@ export default function SegmentationDemo() {
       const frameNumber = Math.floor(videoRef.current.currentTime * fps);
 
       if (width > 10 && height > 10) {
-        console.log("Bounding Box:", { x, y, width, height, frameNumber });
+        // Use the tracked selectedObjectIndex or default to the last object
+        const objIndex = selectedObjectIndex !== null ? selectedObjectIndex : objects.length - 1;
+        const selectedObject = objects[objIndex];
+        
+        // Get the isAddMode state from the selected object
+        const isAddMode = selectedObject.isAddMode !== undefined ? selectedObject.isAddMode : true;
+        
+        // Create a new bounding box with the isAddMode flag
+        const newBoundingBox = { x, y, width, height, frameNumber, isAddMode };
+        
+        // Update the selected object with the new bounding box
+        const updatedObjects = [...objects];
+        updatedObjects[objIndex] = {
+          ...selectedObject,
+          boundingBoxes: [...selectedObject.boundingBoxes, newBoundingBox]
+        };
+        
+        setObjects(updatedObjects);
+        console.log("Bounding Box added to object:", { objectId: selectedObject.id, boundingBox: newBoundingBox });
       }
     }
 
+    // Clear drawing states
     setIsDrawing(false);
     setStartPoint(null);
     setEndPoint(null);
@@ -245,7 +277,7 @@ export default function SegmentationDemo() {
 
   // Function to handle clicks on the video when not drawing a box
   const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
-    if (!isDrawing && videoRef.current) {
+    if (!isDrawing && videoRef.current && objects.length > 0) {
       const video = videoRef.current;
       const rect = video.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -254,8 +286,26 @@ export default function SegmentationDemo() {
       // Calculate frame number (assuming 30 fps for demonstration)
       const fps = 30;
       const frameNumber = Math.floor(video.currentTime * fps);
-
-      console.log("Clicked at:", { x, y, frameNumber });
+      
+      // Use the tracked selectedObjectIndex or default to the last object
+      const objIndex = selectedObjectIndex !== null ? selectedObjectIndex : objects.length - 1;
+      const selectedObject = objects[objIndex];
+      
+      // Get the isAddMode state from the selected object
+      const isAddMode = selectedObject.isAddMode !== undefined ? selectedObject.isAddMode : true;
+      
+      // Create a new point with the isAddMode flag
+      const newPoint = { x, y, frameNumber, isAddMode };
+      
+      // Update the selected object with the new point
+      const updatedObjects = [...objects];
+      updatedObjects[objIndex] = {
+        ...selectedObject,
+        points: [...selectedObject.points, newPoint]
+      };
+      
+      setObjects(updatedObjects);
+      console.log("Point added to object:", { objectId: selectedObject.id, point: newPoint });
     }
   };
   return (
@@ -291,13 +341,15 @@ export default function SegmentationDemo() {
           </div>
 
           <div className="pt-4 px-4 space-y-4 pb-20">
-            {objects.map((object) => (
+            {objects.map((object, index) => (
               <ObjectSelection
                 key={object.id}
                 object={object}
                 onRemove={() => removeObject(object.id)}
                 showDeleteButton={true}
-              />
+                onSelect={() => setSelectedObjectIndex(index)}
+                isSelected={selectedObjectIndex === index}
+                />
             ))}
 
             {objects.length === 0 && (
@@ -309,7 +361,8 @@ export default function SegmentationDemo() {
 
             <button
               onClick={addObject}
-              className="w-full h-16 border border-gray-700 rounded-md flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors text-white"
+              disabled={!videoUrl}
+              className={`w-full h-16 border border-gray-700 rounded-md flex items-center justify-center gap-2 transition-colors text-white ${videoUrl ? 'hover:bg-gray-800' : 'opacity-50 cursor-not-allowed'}`}
             >
               <Plus className="w-5 h-5" />
               <span>Add another object</span>
