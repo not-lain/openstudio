@@ -184,7 +184,26 @@ export default function SegmentationDemo() {
   };
 
   const removeObject = (id: number) => {
-    setObjects(objects.filter((obj) => obj.id !== id));
+    const removedObjectIndex = objects.findIndex(obj => obj.id === id);
+    if (removedObjectIndex === -1) return;
+
+    const updatedObjects = objects.filter((obj) => obj.id !== id).map((obj, index) => ({
+      ...obj,
+      id: index + 1,
+      name: `Object ${index + 1}`
+    }));
+
+    setObjects(updatedObjects);
+    setNextObjectId(updatedObjects.length + 1);
+    
+    // Update selected object index if necessary
+    if (selectedObjectIndex !== null) {
+      if (selectedObjectIndex === removedObjectIndex) {
+        setSelectedObjectIndex(null);
+      } else if (selectedObjectIndex > removedObjectIndex) {
+        setSelectedObjectIndex(selectedObjectIndex - 1);
+      }
+    }
   };
 
   const startOver = () => {
