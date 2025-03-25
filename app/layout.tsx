@@ -1,21 +1,20 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import '@/app/globals.css'
+import { ReactNode } from 'react'
+import { ThemeProvider } from '../components/theme-provider'
+import { Header } from '../components/header'
+import './globals.css'
 
-export const metadata: Metadata = {
-  title: "OpenStudio",
-  description: "Created with OpenStudio",
-  generator: "OpenStudio",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body>
+        <ThemeProvider>
+          <Header />
+          <main>
+            {children}
+          </main>
+        </ThemeProvider>
+      </body>
     </html>
-  );
+  )
 }

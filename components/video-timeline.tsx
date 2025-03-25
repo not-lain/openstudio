@@ -36,9 +36,7 @@ export default function VideoTimeline({
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [localPlayheadPosition, setLocalPlayheadPosition] = useState<
-    number | null
-  >(null);
+  const [localPlayheadPosition, setLocalPlayheadPosition] = useState<number | null>(null);
 
   // Add reset function
   const resetTimeline = () => {
@@ -50,9 +48,10 @@ export default function VideoTimeline({
       videoRef.current.src = "";
       videoRef.current = null;
     }
-    onSeek([0]); // Reset video time to 0
+    onSeek([0]);
   };
 
+  // Generate frame previews when video changes
   useEffect(() => {
     if (!videoURL) {
       resetTimeline();
@@ -61,24 +60,17 @@ export default function VideoTimeline({
 
     if (!duration) return;
 
-    // Create a video element for extracting frames
     const video = document.createElement("video");
     video.src = videoURL;
     videoRef.current = video;
 
-    // Load metadata to ensure duration is available
     video.addEventListener("loadedmetadata", async () => {
-      // Generate frames once metadata is loaded
       const newFrameImages: string[] = [];
 
       for (let i = 0; i < frames.length; i++) {
-        // Calculate the time position for this frame
         const timePosition = (i / (frames.length - 1)) * video.duration;
-
-        // Seek to the time position
         video.currentTime = timePosition;
 
-        // Wait for the seek to complete
         await new Promise<void>((resolve) => {
           const seekHandler = () => {
             resolve();
@@ -87,10 +79,9 @@ export default function VideoTimeline({
           video.addEventListener("seeked", seekHandler);
         });
 
-        // Capture the frame
         const canvas = document.createElement("canvas");
-        canvas.width = 160; // Set width appropriate for timeline
-        canvas.height = 90; // Set height using 16:9 aspect ratio
+        canvas.width = 160;
+        canvas.height = 90;
         const ctx = canvas.getContext("2d");
 
         if (ctx) {
@@ -109,27 +100,19 @@ export default function VideoTimeline({
     };
   }, [videoURL, duration]);
 
-  // Reset local playhead position when currentTime changes from external source
   useEffect(() => {
     if (!isDragging) {
       setLocalPlayheadPosition(null);
     }
   }, [currentTime, isDragging]);
 
-  // Handle timeline click and dragging with improved performance
   const handleTimelineInteraction = (clientX: number) => {
     if (!timelineRef.current || !duration) return;
 
     const rect = timelineRef.current.getBoundingClientRect();
-
-    // Calculate position, clamped to the timeline width
     const offsetX = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const percentage = offsetX / rect.width;
-
-    // Update local position immediately for smooth UI
     setLocalPlayheadPosition(percentage * 100);
-
-    // Update the video position
     const newTime = percentage * duration;
     onSeek([newTime]);
   };
@@ -147,23 +130,20 @@ export default function VideoTimeline({
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    setLocalPlayheadPosition(null); // Clear local position to use currentTime again
+    setLocalPlayheadPosition(null);
   };
 
   useEffect(() => {
-    // Add global mouse event listeners for dragging
     if (isDragging) {
       const onGlobalMouseMove = (e: MouseEvent) => {
-        // Continue tracking horizontal movement even if cursor is outside timeline vertically
         handleTimelineInteraction(e.clientX);
       };
 
       const onGlobalMouseUp = () => {
         setIsDragging(false);
-        setLocalPlayheadPosition(null); // Clear local position to use currentTime again
+        setLocalPlayheadPosition(null);
       };
 
-      // Add listeners to window to track cursor outside of component
       window.addEventListener("mousemove", onGlobalMouseMove, {
         passive: true,
       });
@@ -176,15 +156,13 @@ export default function VideoTimeline({
     }
   }, [isDragging, duration]);
 
-  // Calculate playhead position as percentage - use local position while dragging for smoother UI
-  const playheadPosition = 
+  const playheadPosition =
     isDragging && localPlayheadPosition !== null
       ? localPlayheadPosition
       : duration > 0
-      ? Math.min((currentTime / duration) * 100, 100) // Ensure we don't exceed 100%
-      : 0;
+        ? Math.min((currentTime / duration) * 100, 100)
+        : 0;
 
-  // Add handler for time updates
   const handleTimeChange = (time: number) => {
     if (!isDragging && duration > 0) {
       const newPosition = (time / duration) * 100;
@@ -197,20 +175,17 @@ export default function VideoTimeline({
       <div className="relative mt-4">
         {videoURL ? (
           <>
-            {/* Timeline scrubber with video frames */}
             {duration > 0 && (
               <div
                 ref={timelineRef}
-                className="relative h-16 bg-gray-800 rounded-md overflow-hidden cursor-col-resize select-none"
+                className="relative h-16 bg-muted rounded-md overflow-hidden cursor-col-resize select-none"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
               >
-                {/* Frame display */}
                 <div className="h-full flex">
                   {frames.map((frame, index) => {
                     const frameImage = frameImages[index];
-                    // Fall back to object thumbnail if frame not available yet
                     const objectIndex = Math.floor(
                       (frame / frames.length) * objects.length
                     );
@@ -219,7 +194,7 @@ export default function VideoTimeline({
                     return (
                       <div
                         key={frame}
-                        className="flex-1 border-r border-gray-700 relative"
+                        className="flex-1 border-r border-border relative"
                       >
                         <div
                           className="w-full h-full bg-cover bg-center opacity-70 hover:opacity-100 transition-opacity"
@@ -227,12 +202,11 @@ export default function VideoTimeline({
                             backgroundImage: frameImage
                               ? `url(${frameImage})`
                               : object?.thumbnail
-                              ? `url(${object.thumbnail})`
-                              : "none",
-                            backgroundColor:
-                              frameImage || object?.thumbnail
-                                ? "transparent"
-                                : "#1f2937",
+                                ? `url(${object.thumbnail})`
+                                : "none",
+                            backgroundColor: frameImage || object?.thumbnail
+                              ? "transparent"
+                              : "hsl(var(--muted))",
                           }}
                         />
                       </div>
@@ -251,22 +225,19 @@ export default function VideoTimeline({
               </div>
             )}
 
-            {/* Object indicators */}
             <div className="mt-2 flex items-center gap-2">
-              {objects.map((object, index) => {
-                const objectColor = object.color;
-                return (
-                  <div key={object.id} className="flex items-center gap-2">
-                    <span className="text-sm">{object.name}</span>
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: objectColor }}></div>
-                  </div>
-                );
-              })}
+              {objects.map((object, index) => (
+                <div key={object.id} className="flex items-center gap-2">
+                  <span className="text-sm text-foreground">{object.name}</span>
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: object.color }}
+                  />
+                </div>
+              ))}
             </div>
           </>
-        ) : (
-          null // Also reset when video is not present in render
-        )}
+        ) : null}
       </div>
     </div>
   );
