@@ -9,6 +9,7 @@ interface PlayheadControlProps {
   currentTime: number;
   onTimeChange?: (time: number) => void;
   onPositionChange?: (position: number) => void;
+  isPlaying: boolean; // Add isPlaying prop
 }
 
 export function PlayheadControl({
@@ -18,7 +19,8 @@ export function PlayheadControl({
   onDragStart,
   currentTime,
   onTimeChange,
-  onPositionChange
+  onPositionChange,
+  isPlaying
 }: PlayheadControlProps) {
   // Calculate position based on current time and duration
   const calculatedPosition = useMemo(() => {
@@ -34,24 +36,47 @@ export function PlayheadControl({
     }
   }, [currentTime, duration, isDragging, calculatedPosition, onTimeChange, onPositionChange]);
 
+  // Add real-time update effect when playing
+  useEffect(() => {
+    let animationFrame: number;
+
+    const updatePlayhead = () => {
+      if (isPlaying && !isDragging && duration > 0) {
+        const newPosition = Math.min((currentTime / duration) * 100, 100);
+        onPositionChange?.(newPosition);
+        animationFrame = requestAnimationFrame(updatePlayhead);
+      }
+    };
+
+    if (isPlaying && !isDragging) {
+      animationFrame = requestAnimationFrame(updatePlayhead);
+    }
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [isPlaying, isDragging, duration, currentTime, onPositionChange]);
+
   const displayPosition = isDragging ? position : calculatedPosition;
 
   const commonStyles = {
     left: `${displayPosition}%`,
-    transition: isDragging ? "none" : "left 0.1s linear",
+    transition: isDragging ? "none" : isPlaying ? "none" : "left 0.1s linear",
   };
 
   return (
     <>
       {/* Playhead indicator */}
       <div
-        className="absolute top-0 w-0.5 bg-primary h-full pointer-events-none border border-background"
+        className={`absolute top-0 w-0.5 bg-primary h-full pointer-events-none border border-background ${isPlaying ? "playing" : ""}`}
         style={commonStyles}
       />
 
       {/* Draggable handle */}
       <div
-        className="absolute top-0 w-4 h-6 bg-primary rounded-sm -ml-2 cursor-col-resize z-10 hover:shadow-lg border border-background"
+        className={`absolute top-0 w-4 h-6 bg-primary rounded-sm -ml-2 cursor-col-resize z-10 hover:shadow-lg border border-background ${isPlaying ? "playing" : ""}`}
         style={commonStyles}
         onMouseDown={(e) => {
           e.stopPropagation();

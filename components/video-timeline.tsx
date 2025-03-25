@@ -221,6 +221,7 @@ export default function VideoTimeline({
                   onDragStart={() => setIsDragging(true)}
                   currentTime={currentTime}
                   onTimeChange={handleTimeChange}
+                  isPlaying={!isDragging && currentTime < duration}
                 />
               </div>
             )}
