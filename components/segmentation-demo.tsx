@@ -19,11 +19,26 @@ import { Slider } from "@/components/ui/slider";
 export default function SegmentationDemo() {
   const [currentStep, setCurrentStep] = useState(1);
   const [nextObjectId, setNextObjectId] = useState(1);
+  // Define a color palette for objects
+  const objectColors = [
+    "#FF6B6B", // Coral Red
+    "#4ECDC4", // Turquoise
+    "#45B7D1", // Sky Blue
+    "#96CEB4", // Sage Green
+    "#FFEEAD", // Light Yellow
+    "#D4A5A5", // Dusty Rose
+    "#9FA8DA", // Periwinkle
+    "#FFE082", // Light Orange
+    "#A5D6A7", // Mint Green
+    "#CE93D8"  // Light Purple
+  ];
+
   const [objects, setObjects] = useState<
     {
       id: number;
       name: string;
       thumbnail: string;
+      color: string;
       points: Array<{x: number; y: number; frameNumber: number; isAddMode: boolean}>;
       boundingBoxes: Array<{x: number; y: number; width: number; height: number; frameNumber: number; isAddMode: boolean}>;
       isAddMode?: boolean; // Track add/remove mode for each object
@@ -169,10 +184,12 @@ export default function SegmentationDemo() {
 
   const addObject = () => {
     const newId = nextObjectId;
+    const colorIndex = objects.length > 0 ? ((objects[objects.length - 1].color === objectColors[objectColors.length - 1]) ? 0 : objectColors.indexOf(objects[objects.length - 1].color) + 1) : 0;
     const newObject = {
       id: newId,
       name: `Object ${newId}`,
       thumbnail: "/placeholder.svg?height=60&width=60",
+      color: objectColors[colorIndex],
       points: [],
       boundingBoxes: [],
       isAddMode: true, // Default to add mode

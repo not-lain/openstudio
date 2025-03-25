@@ -6,6 +6,7 @@ interface VideoTimelineProps {
     id: number;
     name: string;
     thumbnail: string;
+    color: string;
   }[];
   currentTime: number;
   duration: number;
@@ -252,12 +253,15 @@ export default function VideoTimeline({
 
             {/* Object indicators */}
             <div className="mt-2 flex items-center gap-2">
-              {objects.map((object) => (
-                <div key={object.id} className="flex items-center gap-2">
-                  <span className="text-sm">{object.name}</span>
-                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                </div>
-              ))}
+              {objects.map((object, index) => {
+                const objectColor = object.color;
+                return (
+                  <div key={object.id} className="flex items-center gap-2">
+                    <span className="text-sm">{object.name}</span>
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: objectColor }}></div>
+                  </div>
+                );
+              })}
             </div>
           </>
         ) : (
