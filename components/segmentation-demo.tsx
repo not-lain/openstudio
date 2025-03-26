@@ -268,20 +268,27 @@ export default function SegmentationDemo() {
   };
 
   useEffect(() => {
-    if (!isPlaying || !videoRef.current) return;
-
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space' && videoRef.current) {
         e.preventDefault();
-        togglePlayPause();
+        if (videoRef.current.ended) {
+          videoRef.current.currentTime = 0;
+          videoRef.current.play();
+          setIsPlaying(true);
+        } else {
+          togglePlayPause();
+        }
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [isPlaying]);
+    // Only add the event listener if we have a video
+    if (videoUrl) {
+      window.addEventListener('keydown', handleKeyPress);
+      return () => {
+        window.removeEventListener('keydown', handleKeyPress);
+      };
+    }
+  }, [videoUrl, togglePlayPause]);
 
   useEffect(() => {
     if (!isPlaying || !videoRef.current) return;

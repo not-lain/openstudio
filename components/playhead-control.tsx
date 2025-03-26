@@ -70,7 +70,7 @@ export function PlayheadControl({
     <>
       {/* Playhead indicator */}
       <div
-        className={`absolute top-0 w-0.5 bg-primary h-full pointer-events-none border border-background ${isPlaying ? "playing" : ""}`}
+        className={`absolute top-0 w-0.5 bg-background h-full pointer-events-none border border-primary ${isPlaying ? "playing" : ""}`}
         style={commonStyles}
       />
 
