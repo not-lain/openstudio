@@ -234,12 +234,13 @@ export default function VideoTimeline({
                   <div className="flex flex-col gap-3">
                     {objects.map((object, index) => (
                       <div key={object.id} className="flex flex-col gap-2">
-                        <span className="text-sm font-medium text-foreground w-full">{object.name}</span>
-                        <Progress
-                          value={65}
-                          className="w-full h-2 rounded-full bg-muted"
-                          style={{ backgroundColor: object.color }}
-                        />
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground w-1/4">{object.name}</span>
+                          <Progress
+                            className="w-3/4 h-1 rounded-full bg-muted"
+                            style={{ backgroundColor: object.color, opacity: 0.5 }}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

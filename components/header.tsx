@@ -9,9 +9,9 @@ export function Header() {
             <div className="container flex h-14 items-center justify-between">
                 <div className="flex items-center gap-4">
                     <a className="flex items-center space-x-2" href="/">
-                        <h1 className="text-xl font-bold text-foreground">Segment Anything 2 Demo</h1>
+                        <h1 className="text-xl font-bold text-foreground">OpenStudio</h1>
                     </a>
-                    <p className="text-sm text-muted-foreground">OpenStudio</p>
+                    <p className="text-sm text-muted-foreground">Segment Anything 2 Demo</p>
                 </div>
 
                 <div className="flex items-center gap-6">
