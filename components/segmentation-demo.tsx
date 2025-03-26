@@ -149,8 +149,8 @@ export default function SegmentationDemo() {
       name: `Object ${newId}`,
       thumbnail: "/placeholder.svg?height=60&width=60",
       color: objectColors[colorIndex],
-      points: [],
-      boundingBoxes: [],
+      points: [] as { x: number; y: number; frameNumber: number; isAddMode: boolean }[],
+      boundingBoxes: [] as { x: number; y: number; width: number; height: number; frameNumber: number; isAddMode: boolean }[],
       isAddMode: true,
     };
     setObjects([...objects, newObject]);
@@ -229,7 +229,7 @@ export default function SegmentationDemo() {
         const updatedObjects = [...objects];
         updatedObjects[objIndex] = {
           ...selectedObject,
-          boundingBoxes: [...selectedObject.boundingBoxes, newBoundingBox]
+          boundingBoxes: [...(selectedObject.boundingBoxes || []), newBoundingBox]
         };
 
         setObjects(updatedObjects);
@@ -262,7 +262,7 @@ export default function SegmentationDemo() {
       const updatedObjects = [...objects];
       updatedObjects[objIndex] = {
         ...selectedObject,
-        points: [...selectedObject.points, newPoint]
+        points: [...(selectedObject.points || []), newPoint]
       };
 
       setObjects(updatedObjects);
@@ -320,7 +320,6 @@ export default function SegmentationDemo() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden">
-
       <main className="flex flex-1 overflow-hidden">
         <Sidebar
           objects={objects}
@@ -334,7 +333,7 @@ export default function SegmentationDemo() {
 
         <div className="flex-1 flex flex-col min-w-0">
           <div
-            className="flex-1 relative group"
+            className="h-full relative group"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
@@ -364,7 +363,6 @@ export default function SegmentationDemo() {
               />
             )}
           </div>
-
           {videoUrl && (
             <VideoControls
               isPlaying={isPlaying}

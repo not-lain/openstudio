@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PlayheadControl } from './playhead-control';
+import { Progress } from "./ui/progress";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface VideoTimelineProps {
   objects: {
@@ -173,72 +175,79 @@ export default function VideoTimeline({
   return (
     <div className="flex-1" ref={containerRef}>
       <div className="relative mt-4">
-        {videoURL ? (
-          <>
-            {duration > 0 && (
-              <div
-                ref={timelineRef}
-                className="relative h-16 bg-muted rounded-md overflow-hidden cursor-col-resize select-none"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-              >
-                <div className="h-full flex">
-                  {frames.map((frame, index) => {
-                    const frameImage = frameImages[index];
-                    const objectIndex = Math.floor(
-                      (frame / frames.length) * objects.length
-                    );
-                    const object = objects[objectIndex];
-
-                    return (
-                      <div
-                        key={frame}
-                        className="flex-1 border-r border-border relative"
-                      >
-                        <div
-                          className="w-full h-full bg-cover bg-center opacity-70 hover:opacity-100 transition-opacity"
-                          style={{
-                            backgroundImage: frameImage
-                              ? `url(${frameImage})`
-                              : object?.thumbnail
-                                ? `url(${object.thumbnail})`
-                                : "none",
-                            backgroundColor: frameImage || object?.thumbnail
-                              ? "transparent"
-                              : "hsl(var(--muted))",
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <PlayheadControl
-                  position={playheadPosition}
-                  isDragging={isDragging}
-                  duration={duration}
-                  onDragStart={() => setIsDragging(true)}
-                  currentTime={currentTime}
-                  onTimeChange={handleTimeChange}
-                  isPlaying={!isDragging && currentTime < duration}
-                />
-              </div>
-            )}
-
-            <div className="mt-2 flex items-center gap-2">
-              {objects.map((object, index) => (
-                <div key={object.id} className="flex items-center gap-2">
-                  <span className="text-sm text-foreground">{object.name}</span>
+        <div className="flex flex-col h-full">
+          {videoURL ? (
+            <>
+              {duration > 0 && (
+                <div className="relative">
                   <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: object.color }}
+                    ref={timelineRef}
+                    className="relative h-16 bg-muted rounded-md overflow-hidden cursor-col-resize select-none"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                  >
+                    <div className="h-full flex">
+                      {frames.map((frame, index) => {
+                        const frameImage = frameImages[index];
+                        const objectIndex = Math.floor(
+                          (frame / frames.length) * objects.length
+                        );
+                        const object = objects[objectIndex];
+
+                        return (
+                          <div
+                            key={frame}
+                            className="flex-1 border-r border-border relative"
+                          >
+                            <div
+                              className="w-full h-full bg-cover bg-center opacity-70 hover:opacity-100 transition-opacity"
+                              style={{
+                                backgroundImage: frameImage
+                                  ? `url(${frameImage})`
+                                  : object?.thumbnail
+                                    ? `url(${object.thumbnail})`
+                                    : "none",
+                                backgroundColor: frameImage || object?.thumbnail
+                                  ? "transparent"
+                                  : "hsl(var(--muted))",
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <PlayheadControl
+                    position={playheadPosition}
+                    isDragging={isDragging}
+                    duration={duration}
+                    onDragStart={() => setIsDragging(true)}
+                    currentTime={currentTime}
+                    onTimeChange={handleTimeChange}
+                    isPlaying={!isDragging && currentTime < duration}
                   />
                 </div>
-              ))}
-            </div>
-          </>
-        ) : null}
+              )}
+              <ScrollArea className="flex-1 mt-4 border rounded-md">
+                <div className="p-4">
+                  <div className="flex flex-col gap-3">
+                    {objects.map((object, index) => (
+                      <div key={object.id} className="flex flex-col gap-2">
+                        <span className="text-sm font-medium text-foreground w-full">{object.name}</span>
+                        <Progress
+                          value={65}
+                          className="w-full h-2 rounded-full bg-muted"
+                          style={{ backgroundColor: object.color }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
