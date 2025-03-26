@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,14 +41,40 @@ export function VideoPlayer({
     endPoint,
     boundingBoxes,
 }: VideoPlayerProps) {
+    const [videoDimensions, setVideoDimensions] = React.useState({ width: 0, height: 0 });
+
+    const handleLoadedMetadata = () => {
+        if (videoRef.current) {
+            setVideoDimensions({
+                width: videoRef.current.videoWidth,
+                height: videoRef.current.videoHeight
+            });
+        }
+        onLoadedMetadata();
+    };
+
     return (
-        <div className="relative h-full">
+        <div
+            className="relative"
+            style={{
+                width: videoDimensions.width > 0 ? `${videoDimensions.width}px` : '100%',
+                height: videoDimensions.height > 0 ? `${videoDimensions.height}px` : '100%'
+            }}
+        >
+            {/* Background div that prevents interactions */}
+            <div
+                className="absolute inset-0 bg-black/5 pointer-events-auto z-0"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseMove={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+            />
             <video
                 ref={videoRef}
                 src={videoUrl}
-                className="absolute inset-0 w-full h-full object-contain bg-card"
+                className="absolute inset-0 w-full h-full object-contain bg-card z-10"
                 onTimeUpdate={onTimeUpdate}
-                onLoadedMetadata={onLoadedMetadata}
+                onLoadedMetadata={handleLoadedMetadata}
                 onClick={onClick}
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
@@ -56,7 +83,7 @@ export function VideoPlayer({
             {boundingBoxes.map((box, index) => (
                 <div
                     key={index}
-                    className="absolute border-2 border-primary pointer-events-none"
+                    className="absolute border-2 border-primary pointer-events-none z-20"
                     style={{
                         left: `${box.x}px`,
                         top: `${box.y}px`,
@@ -67,7 +94,7 @@ export function VideoPlayer({
             ))}
             {isDrawing && startPoint && endPoint && (
                 <div
-                    className="absolute border-2 border-primary pointer-events-none"
+                    className="absolute border-2 border-primary pointer-events-none z-20"
                     style={{
                         left: `${Math.min(startPoint.x, endPoint.x)}px`,
                         top: `${Math.min(startPoint.y, endPoint.y)}px`,
@@ -77,7 +104,7 @@ export function VideoPlayer({
                 />
             )}
             <div className={cn(
-                "absolute top-4 right-4 flex gap-2",
+                "absolute top-4 right-4 flex gap-2 z-30",
                 "transition-opacity duration-200",
                 "opacity-0 group-hover:opacity-100 focus-within:opacity-100"
             )}>

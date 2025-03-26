@@ -49,6 +49,7 @@ export default function SegmentationDemo() {
   }[]>([]);
 
   const [selectedObjectIndex, setSelectedObjectIndex] = useState<number | null>(null);
+  const [justFinishedDrawing, setJustFinishedDrawing] = useState(false);
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -223,6 +224,8 @@ export default function SegmentationDemo() {
         const isAddMode = selectedObject.isAddMode !== undefined ? selectedObject.isAddMode : true;
         const newBoundingBox = { x, y, width, height, frameNumber, isAddMode };
 
+        console.log(`[Bounding Box] Frame ${frameNumber}, Object ${selectedObject.name}, Mode: ${isAddMode ? 'Add' : 'Remove'}, Coordinates: x=${x}, y=${y}, w=${width}, h=${height}`);
+
         const updatedObjects = [...objects];
         updatedObjects[objIndex] = {
           ...selectedObject,
@@ -230,6 +233,9 @@ export default function SegmentationDemo() {
         };
 
         setObjects(updatedObjects);
+        setJustFinishedDrawing(true);
+        // Reset the flag after a short delay
+        setTimeout(() => setJustFinishedDrawing(false), 100);
       }
     }
     setIsDrawing(false);
@@ -238,7 +244,7 @@ export default function SegmentationDemo() {
   };
 
   const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
-    if (!isDrawing && videoRef.current && objects.length > 0) {
+    if (!isDrawing && !justFinishedDrawing && videoRef.current && objects.length > 0) {
       const video = videoRef.current;
       const rect = video.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -250,6 +256,8 @@ export default function SegmentationDemo() {
       const selectedObject = objects[objIndex];
       const isAddMode = selectedObject.isAddMode !== undefined ? selectedObject.isAddMode : true;
       const newPoint = { x, y, frameNumber, isAddMode };
+
+      console.log(`[Point] Frame ${frameNumber}, Object ${selectedObject.name}, Mode: ${isAddMode ? 'Add' : 'Remove'}, Coordinates: x=${x}, y=${y}`);
 
       const updatedObjects = [...objects];
       updatedObjects[objIndex] = {
